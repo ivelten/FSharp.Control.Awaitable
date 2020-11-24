@@ -1,0 +1,13 @@
+source https://api.nuget.org/v3/index.json
+
+storage: none
+framework: net48, netstandard2.1, netcoreapp3.1
+
+# Libraries should target lower versions of FSharp.Core
+# A good choice for libraries is to target netstandard2.0 and FSharp.Core 4.7.2
+# https://github.com/dotnet/fsharp/blob/main/docs/fsharp-core-notes.md
+nuget FSharp.Core 4.7.2
+
+# Those are necessary for testing
+nuget Expecto
+nuget Expecto.FsCheck
