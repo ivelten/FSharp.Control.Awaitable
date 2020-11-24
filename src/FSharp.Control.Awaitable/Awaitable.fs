@@ -3,8 +3,8 @@
 open System.Threading.Tasks
 
 type Awaitable<'T> =
-    | Sync of 'T
-    | Async of Async<'T>
+    | Sync of value : 'T
+    | Async of computation : Async<'T>
 
 [<RequireQualifiedAccess>]
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]

@@ -2,16 +2,70 @@ module FSharp.Control.Awaitable.Tests.AwaitableTests
 
 open Expecto
 open FSharp.Control
+open Config
+open Helpers
 
 [<Tests>]
 let properties =
     testList "Awaitable module tests" [
-        testProperty "isSync should return true when Awaitable is a synchronous value" <| fun a ->
-            match a with
-            | Sync _ -> Awaitable.isSync a
-            | _ -> not <| Awaitable.isSync a
-        testProperty "isAsync should return true when Awaitable is an asynchronous value" <| fun a ->
-            match a with
-            | Async _ -> Awaitable.isAsync a
-            | _ -> not <| Awaitable.isAsync a
+
+        testProp "isSync should return true when Awaitable is a synchronous value" <| fun x ->
+            match x with
+            | Sync _ -> Awaitable.isSync x
+            | _ -> not (Awaitable.isSync x)
+        
+        testProp "isAsync should return true when Awaitable is an asynchronous value" <| fun x ->
+            match x with
+            | Async _ -> Awaitable.isAsync x
+            | _ -> not (Awaitable.isAsync x)
+        
+        testProp "ofValue should create a synchronous value" <| fun x ->
+            match Awaitable.ofValue x with
+            | Sync v -> x = v
+            | _ -> false
+        
+        testProp "ofAsync should create an asynchronous value" <| fun x ->
+            match Awaitable.ofAsync x with
+            | Async a -> asyncEquals x a
+            | _ -> false
+        
+        testProp "ofTask should create an asynchronous value" <| fun x ->
+            match Awaitable.ofTask x with
+            | Async a -> asyncEqualsTask x a
+            | _ -> false
+        
+        testProp "get should return value synchronously" <| fun x ->
+            match x with
+            | Sync v -> Awaitable.get x = v
+            | Async a -> Awaitable.get x = Async.RunSynchronously a
+
+        testProp "toAsync should return value asynchronously" <| fun x ->
+            let asyncValue = Awaitable.toAsync x
+            match x with
+            | Sync v -> asyncEqualsSync v asyncValue
+            | Async a -> asyncEquals asyncValue a
+
+        testProp "map should transform inner value" <| fun x ->
+            let mapper x =
+                match x with
+                | null -> null
+                | _ -> x.ToString ()
+            let mapped = Awaitable.map mapper x
+            match x, mapped with
+            | Sync x, Sync y ->  mapper x = y
+            | Async x, Async y -> mapAsync mapper x |> asyncEquals y
+            | _ -> false
+
+        testProp "bind should transform inner value" <| fun x ->
+            let binder ctor x =
+                match x with
+                | null -> null
+                | _ -> x.ToString ()
+                |> ctor
+            let bound = Awaitable.bind (binder Awaitable.ofValue) x
+            match x, bound with
+            | Sync x, Sync y -> binder id x = y
+            | Async x, Async y -> bindAsync (binder async.Return) x |> asyncEquals y
+            | _ -> false
+            
     ]
