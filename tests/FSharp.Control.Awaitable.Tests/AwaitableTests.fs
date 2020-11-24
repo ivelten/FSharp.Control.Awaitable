@@ -2,8 +2,20 @@ module FSharp.Control.Awaitable.Tests.AwaitableTests
 
 open Expecto
 open FSharp.Control
+open System.Threading.Tasks
 open Config
 open Helpers
+
+let mapper x =
+    match x with
+    | null -> null
+    | _ -> x.GetHashCode().ToString()
+
+let binder ctor (x : obj) =
+    match x with
+    | null -> null
+    | _ -> x.GetHashCode().ToString()
+    |> ctor
 
 [<Tests>]
 let properties =
@@ -46,10 +58,6 @@ let properties =
             | Async a -> asyncEquals asyncValue a
 
         testProp "map should transform inner value" <| fun x ->
-            let mapper x =
-                match x with
-                | null -> null
-                | _ -> x.ToString ()
             let mapped = Awaitable.map mapper x
             match x, mapped with
             | Sync x, Sync y ->  mapper x = y
@@ -57,15 +65,28 @@ let properties =
             | _ -> false
 
         testProp "bind should transform inner value" <| fun x ->
-            let binder ctor x =
-                match x with
-                | null -> null
-                | _ -> x.ToString ()
-                |> ctor
             let bound = Awaitable.bind (binder Awaitable.ofValue) x
             match x, bound with
             | Sync x, Sync y -> binder id x = y
             | Async x, Async y -> bindAsync (binder async.Return) x |> asyncEquals y
             | _ -> false
             
+        testProp "bindAsync should transform inner value" <| fun x ->
+            let bound = Awaitable.bindAsync (binder Awaitable.ofValue) x
+            match bound with
+            | Sync v -> binder async.Return x |> asyncEqualsSync v
+            | Async a -> bindAsync (binder async.Return) x |> asyncEquals a
+            
+        testProp "bindTask should transform inner value" <| fun x ->
+            let bound = Awaitable.bindTask (binder Awaitable.ofValue) x
+            match bound with
+            | Sync v -> binder Task.FromResult x |> taskEqualsSync v
+            | Async a -> bindTask (binder async.Return) x |> asyncEquals a
+
+        testProp "rescue should generate value when exception occurs" <| fun x ->
+            let awaitable = Async (async { return failwith "Test error!" })
+            let rescued = Awaitable.rescue (fun _ -> x) awaitable
+            match rescued with
+            | Sync v -> v = x
+            | Async a -> asyncEqualsSync x a
     ]

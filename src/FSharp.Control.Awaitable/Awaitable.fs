@@ -58,6 +58,9 @@ module Awaitable =
     let inline bindAsync (binder : 'T -> Awaitable<'U>) (x : Async<'T>) =
         ofAsync x |> bind binder
 
+    let inline bindTask (binder : 'T -> Awaitable<'U>) (x : Task<'T>) =
+        ofTask x |> bind binder
+
     let inline rescue (rescuer : exn -> 'T) x =
         match x with
         | Sync v -> Sync v
@@ -85,6 +88,8 @@ type AwaitableBuilder () =
     member inline __.Bind (awaitable : Awaitable<'T>, binder : 'T -> Awaitable<'U>) = Awaitable.bind binder awaitable
 
     member inline __.Bind (computation : Async<'T>, binder : 'T -> Awaitable<'U>) = Awaitable.bindAsync binder computation
+
+    member inline __.Bind (task : Task<'T>, binder : 'T -> Awaitable<'U>) = Awaitable.bindTask binder task
 
     member inline __.Delay (producer : unit -> Awaitable<'T>) = producer ()
 

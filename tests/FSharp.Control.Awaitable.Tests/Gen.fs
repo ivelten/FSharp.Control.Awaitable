@@ -27,20 +27,17 @@ let awaitableArb =
 type AwaitableValue<'T> = AwaitableValue of Awaitable<'T>
 
 let awaitableValueArb =
-    awaitableArb
-    |> Arb.convert AwaitableValue (fun (AwaitableValue x) -> x)
+    awaitableArb |> Arb.convert AwaitableValue (fun (AwaitableValue x) -> x)
 
 type AsyncValue<'T> = AsyncValue of Async<'T>
 
 let asyncValueArb =
-    asyncArb
-    |> Arb.convert AsyncValue (fun (AsyncValue x) -> x)
+    asyncArb |> Arb.convert AsyncValue (fun (AsyncValue x) -> x)
 
 type TaskValue<'T> = TaskValue of Task<'T>
 
 let taskValueArb =
-    taskArb
-    |> Arb.convert TaskValue (fun (TaskValue x) -> x)
+    taskArb |> Arb.convert TaskValue (fun (TaskValue x) -> x)
 
 let addToConfig (config : FsCheckConfig) =
     let types = 
