@@ -44,8 +44,6 @@ Target.create "Build" (fun _ ->
                         CustomParams = Some "--no-restore" } })))
 
 Target.create "Test" (fun _ ->
-    !! "tests/**/bin/Release/*/*Tests.dll"
-    |> Seq.iter (runNetCore >> Proc.run >> ignore)
     !! "tests/**/bin/Release/*/*Tests.exe"
     |> Seq.iter (runNetFramework >> Proc.run >> ignore))
 
