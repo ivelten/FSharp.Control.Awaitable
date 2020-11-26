@@ -82,7 +82,9 @@ module Awaitable =
             } |> Async
 
     let forAll (binder : 'T -> Awaitable<unit>) (xs : seq<'T>) =
-        xs |> Seq.map binder |> Seq.reduce combine
+        if not (isNull xs || Seq.isEmpty xs)
+        then xs |> Seq.map binder |> Seq.reduce combine
+        else Sync ()
 
 type AwaitableBuilder () =
     member inline __.Bind (awaitable : Awaitable<'T>, binder : 'T -> Awaitable<'U>) = Awaitable.bind binder awaitable

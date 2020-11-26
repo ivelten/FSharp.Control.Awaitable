@@ -5,6 +5,7 @@ open FSharp.Control
 open System.Threading.Tasks
 open Config
 open Helpers
+open System.Collections.Generic
 
 let mapper x =
     match x with
@@ -89,4 +90,28 @@ let properties =
             match rescued with
             | Sync v -> v = x
             | Async a -> asyncEqualsSync x a
+
+        testProp "combine should return second awaitable after running first in case of asynchronous" <| fun y ->
+            let mutable wasRun = false
+            let x = Async (async { wasRun <- true })
+            let z = Awaitable.combine y x
+            match y, z with
+            | Sync y, Async z -> asyncEqualsSync y z && wasRun
+            | Async y, Async z -> asyncEquals y z && wasRun
+            | _ -> false
+
+        testProp "combine should return second awaitable in case of synchronous" <| fun y ->
+            let x = Sync ()
+            let z = Awaitable.combine y x
+            match y, z with
+            | Sync y, Sync z -> y = z
+            | Async y, Async z -> asyncEquals y z
+            | _ -> false
+
+        testProp "forAll should iterate sequence" <| fun (xs : list<obj>) ->
+            let items = List<_>(0)
+            let binder x = items.Add x; Sync ()
+            match Awaitable.forAll binder xs with
+            | Sync () -> List.ofSeq items = xs
+            | _ -> false
     ]
