@@ -14,38 +14,45 @@ open Fake.IO
 open Fake.IO.Globbing.Operators
 open Fake.Core.TargetOperators
 
-let runNetCore path =
+let netCore (path : FilePath) =
     [ path ] |> CreateProcess.fromRawCommand "dotnet"
 
-let runNetFramework path =
+let netFramework (path : FilePath) =
     if Environment.isWindows
     then CreateProcess.fromRawCommand path []
     else [ path ] |> CreateProcess.fromRawCommand "mono"
 
-Target.create "Clean" (fun _ ->
+let runTests (runner : FilePath -> CreateProcess<ProcessResult<unit>>) (pattern : IGlobbingPattern) =
+    pattern
+    |> Seq.map (runner >> Proc.run >> (fun x -> x.ExitCode))
+    |> Seq.iter (fun code -> if code <> 0 then failwith "Test run failed.")
+
+Target.create "Clean" <| fun _ ->
     !! "src/**/bin"
     ++ "src/**/obj"
     ++ "tests/**/bin"
     ++ "tests/**/obj"
-    |> Shell.cleanDirs)
+    |> Shell.cleanDirs
 
-Target.create "Restore" (fun _ ->
+Target.create "Restore" <| fun _ ->
     !! "src/**/*.fsproj"
     ++ "tests/**/*.fsproj"
-    |> Seq.iter (DotNet.restore id))
+    |> Seq.iter (DotNet.restore id)
 
-Target.create "Build" (fun _ ->
+Target.create "Build" <| fun _ ->
     !! "src/**/*.fsproj"
     ++ "tests/**/*.fsproj"
     |> Seq.iter (DotNet.build (fun options ->
         { options with 
             Configuration = DotNet.BuildConfiguration.Release
             Common = { options.Common with 
-                        CustomParams = Some "--no-restore" } })))
+                        CustomParams = Some "--no-restore" } }))
 
-Target.create "Test" (fun _ ->
-    !! "tests/**/bin/Release/*/*Tests.exe"
-    |> Seq.iter (runNetFramework >> Proc.run >> ignore))
+Target.create "Test" <| fun _ ->
+    !! "tests/**/bin/Release/net48/*Tests.exe"
+    |> runTests netFramework
+    !! "tests/**/bin/Release/netcoreapp3.1/*Tests.dll"
+    |> runTests netCore
 
 Target.create "All" ignore
 

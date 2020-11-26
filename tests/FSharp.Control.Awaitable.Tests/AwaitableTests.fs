@@ -108,7 +108,7 @@ let properties =
             | Async y, Async z -> asyncEquals y z
             | _ -> false
 
-        testProp "forAll should iterate sequence" <| fun (xs : list<obj>) ->
+        testProp "forAll should iterate sequence" <| fun xs ->
             let items = List<_>(0)
             let binder x = items.Add x; Sync ()
             match Awaitable.forAll binder xs with
