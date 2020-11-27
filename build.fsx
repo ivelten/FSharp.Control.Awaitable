@@ -51,7 +51,7 @@ Target.create "Build" <| fun _ ->
 Target.create "Test" <| fun _ ->
     !! "tests/**/bin/Release/net48/*Tests.exe"
     |> runTests netFramework
-    !! "tests/**/bin/Release/netcoreapp3.1/*Tests.dll"
+    !! "tests/**/bin/Release/net5.0/*Tests.dll"
     |> runTests netCore
 
 Target.create "All" ignore

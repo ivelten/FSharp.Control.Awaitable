@@ -1,5 +1,5 @@
 STORAGE: NONE
-RESTRICTION: || (== net48) (== netcoreapp3.1) (== netstandard2.1)
+RESTRICTION: || (== net48) (== net50) (== netstandard2.1)
 NUGET
   remote: https://api.nuget.org/v3/index.json
     Expecto (9.0.2)
