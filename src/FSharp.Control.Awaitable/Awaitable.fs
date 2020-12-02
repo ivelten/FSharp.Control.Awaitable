@@ -25,6 +25,8 @@ module Awaitable =
 
     let inline ofTask (x : Task<'T>) = Async (Async.AwaitTask x)
 
+    let inline ofPlainTask (x : Task) = Async (Async.AwaitTask x)
+
     let inline get (x : Awaitable<'T>) =
         match x with
         | Sync v -> v
@@ -61,13 +63,20 @@ module Awaitable =
     let inline bindTask (binder : 'T -> Awaitable<'U>) (x : Task<'T>) =
         ofTask x |> bind binder
 
-    let inline rescue (rescuer : exn -> 'T) x =
+    let inline bindPlainTask (binder : unit -> Awaitable<'T>) (x : Task) =
+        ofPlainTask x |> bind binder
+
+    let inline rescue (rescuer : exn -> Awaitable<'T>) x =
         match x with
         | Sync v -> Sync v
         | Async a ->
             async {
-                try return! a
-                with ex -> return rescuer ex
+                try
+                    return! a
+                with ex ->
+                    match rescuer ex with
+                    | Sync v -> return v
+                    | Async a -> return! a
             } |> Async
 
     let combine (awaitable2 : Awaitable<'T>) (awaitable1 : Awaitable<unit>) =
@@ -93,6 +102,8 @@ type AwaitableBuilder () =
 
     member inline __.Bind (task : Task<'T>, binder : 'T -> Awaitable<'U>) = Awaitable.bindTask binder task
 
+    member inline __.Bind (task : Task, binder : unit -> Awaitable<'T>) = Awaitable.bindPlainTask binder task
+
     member inline __.Delay (producer : unit -> Awaitable<'T>) = producer ()
 
     member inline __.Return (value : 'T) = Awaitable.ofValue value
@@ -111,7 +122,7 @@ type AwaitableBuilder () =
 
     member inline __.TryFinally (awaitable : Awaitable<'T>, compensation) = compensation (); awaitable
 
-    member inline __.Zero () = Awaitable.ofValue Unchecked.defaultof<'T>
+    member inline __.Zero () = Awaitable.ofValue ()
 
 [<AutoOpen>]
 module AwaitableOperators =

@@ -21,7 +21,6 @@ let binder ctor (x : obj) =
 [<Tests>]
 let properties =
     testList "Awaitable module tests" [
-
         testProp "isSync should return true when Awaitable is a synchronous value" <| fun x ->
             match x with
             | Sync _ -> Awaitable.isSync x
@@ -87,9 +86,10 @@ let properties =
         testProp "rescue should generate value when exception occurs" <| fun x ->
             let awaitable = Async (async { return failwith "Test error!" })
             let rescued = Awaitable.rescue (fun _ -> x) awaitable
-            match rescued with
-            | Sync v -> v = x
-            | Async a -> asyncEqualsSync x a
+            match rescued, x with
+            | Async rescued, Sync x -> asyncEqualsSync x rescued
+            | Async rescued, Async x -> asyncEquals rescued x
+            | _ -> false
 
         testProp "combine should return second awaitable after running first in case of asynchronous" <| fun y ->
             let mutable wasRun = false
