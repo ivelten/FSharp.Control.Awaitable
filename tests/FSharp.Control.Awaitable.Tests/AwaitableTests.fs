@@ -19,7 +19,7 @@ let binder ctor (x : obj) =
     |> ctor
 
 [<Tests>]
-let properties =
+let tests =
     testList "Awaitable module tests" [
         testProp "isSync should return true when Awaitable is a synchronous value" <| fun x ->
             match x with

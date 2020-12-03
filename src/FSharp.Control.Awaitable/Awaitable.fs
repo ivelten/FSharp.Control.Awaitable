@@ -1,5 +1,6 @@
 ﻿namespace FSharp.Control
 
+open System
 open System.Threading.Tasks
 
 type Awaitable<'T> =
@@ -121,6 +122,20 @@ type AwaitableBuilder () =
     member inline __.TryWith (awaitable : Awaitable<'T>, rescuer) = Awaitable.rescue rescuer awaitable
 
     member inline __.TryFinally (awaitable : Awaitable<'T>, compensation) = compensation (); awaitable
+
+    member __.Using (resource : 'T :> IDisposable, binder : 'T -> Awaitable<'U>) =
+        let mutable runningAsynchronously = false
+        try
+            match binder resource with
+            | Sync v -> Sync v
+            | Async a ->
+                runningAsynchronously <- true
+                async {
+                    try return! a
+                    finally resource.Dispose ()
+                } |> Async
+        finally
+            if not runningAsynchronously then resource.Dispose ()
 
     member inline __.Zero () = Awaitable.ofValue ()
 

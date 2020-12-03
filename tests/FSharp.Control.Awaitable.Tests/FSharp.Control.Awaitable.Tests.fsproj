@@ -7,6 +7,7 @@
     <ProjectReference Include="..\..\src\FSharp.Control.Awaitable\FSharp.Control.Awaitable.fsproj" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assertions.fs" />
     <Compile Include="Helpers.fs" />
     <Compile Include="Gen.fs" />
     <Compile Include="Config.fs" />
